@@ -40,6 +40,7 @@ const BLOCKS = [
 const SKIP = 'script,style,noscript,template,textarea,select,title,head,svg defs';
 const TEXT_ATTRS = ['aria-label', 'title', 'alt', 'post-title', 'subreddit-prefixed-name'];
 const CONFIRM_MS = 4000;
+const TITLE_ATTR = 'data-vv-title';
 
 export interface EngineOptions {
   adapter: Adapter;
@@ -64,7 +65,6 @@ export class CensorEngine {
   private confirmTimers = new WeakMap<Element, number>();
   private countTimer: number | undefined;
   private lastCount = -1;
-  private originalTitle: string | null = null;
   private relinkPending = false;
   private running = false;
 
@@ -90,12 +90,28 @@ export class CensorEngine {
       subtree: true,
       characterData: true,
     });
+    // An older copy of this script (from before an extension update) may have left panels up.
+    // Clear and rescan in one go: nothing paints in between, so no spoiler flashes.
+    this.clearAll();
     this.scan(document.documentElement);
     this.flush();
     this.checkTitle();
   }
 
+  /** Turn the shield off on this page: stop watching and unhide everything. */
   stop(): void {
+    if (!this.running) return;
+    this.detach();
+    this.clearAll();
+    this.restoreTitle();
+    this.reportCount();
+  }
+
+  /**
+   * Stop watching the page but leave the panels up. Used when a newer copy of the script
+   * (after an extension update) takes over this page and will adopt them.
+   */
+  detach(): void {
     if (!this.running) return;
     this.running = false;
     for (const type of ['click', 'auxclick', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup']) {
@@ -104,10 +120,9 @@ export class CensorEngine {
     window.removeEventListener('keydown', this.onKey, true);
     window.removeEventListener('play', this.onPlay, true);
     this.observer.disconnect();
+    this.resizer.disconnect();
     this.pending.clear();
-    this.clearAll();
-    this.restoreTitle();
-    this.reportCount();
+    window.clearTimeout(this.countTimer);
   }
 
   /** Swap in new settings: unhide everything and scan from scratch. */
@@ -140,7 +155,7 @@ export class CensorEngine {
     }
     // Runs before the browser paints, so new spoilers never flash on screen.
     this.flush();
-    if (titleChanged || this.originalTitle === null) this.checkTitle();
+    if (titleChanged || !document.documentElement.hasAttribute(TITLE_ATTR)) this.checkTitle();
   }
 
   /** Queue every card in a new subtree, and every matching loose text node. */
@@ -377,19 +392,23 @@ export class CensorEngine {
 
   // ---------------------------------------------------------------- tab title
 
+  // The real title is kept on <html> rather than in memory, so a newer copy of the script
+  // can still put it back after an extension update.
+
   private checkTitle(): void {
     if (!this.opts.maskTitle) return;
     const title = document.title;
     if (!title || title === TITLE_MASK) return;
     if (this.opts.matcher.test(title)) {
-      this.originalTitle = title;
+      document.documentElement.setAttribute(TITLE_ATTR, title);
       document.title = TITLE_MASK;
     }
   }
 
   private restoreTitle(): void {
-    if (this.originalTitle !== null && document.title === TITLE_MASK) document.title = this.originalTitle;
-    this.originalTitle = null;
+    const original = document.documentElement.getAttribute(TITLE_ATTR);
+    if (original !== null && document.title === TITLE_MASK) document.title = original;
+    document.documentElement.removeAttribute(TITLE_ATTR);
   }
 
   // ---------------------------------------------------------------- counting

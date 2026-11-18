@@ -45,9 +45,11 @@ export default defineContentScript({
     // Start as early as possible with whatever is stored, then follow changes live.
     apply(withDefaults(await settingsItem.getValue()));
     const unwatch = settingsItem.watch((value) => apply(withDefaults(value)));
+    // Fires when a newer copy of this script starts in the page (the background injects one
+    // into open tabs after an update). Step aside without unhiding; the new copy takes over.
     ctx.onInvalidated(() => {
       unwatch();
-      engine?.stop();
+      engine?.detach();
     });
   },
 });

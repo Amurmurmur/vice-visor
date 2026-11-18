@@ -48,4 +48,23 @@ export default defineBackground(() => {
   browser.tabs.onRemoved.addListener((tabId) => {
     queue = queue.then(() => storage.removeItem(tabCountsKey(tabId)));
   });
+
+  // Chrome only injects content scripts into pages loaded after install. On install or update,
+  // put the current version into tabs that are already open, so they're protected (and count,
+  // and obey the on/off switch) without a refresh.
+  browser.runtime.onInstalled.addListener(async () => {
+    const tabs = await browser.tabs.query({ url: ['http://*/*', 'https://*/*'] });
+    await Promise.all(
+      tabs.map(async (tab) => {
+        if (tab.id === undefined || tab.discarded) return;
+        const target = { tabId: tab.id, allFrames: true };
+        try {
+          await browser.scripting.insertCSS({ target, files: ['/content-scripts/content.css'] });
+          await browser.scripting.executeScript({ target, files: ['/content-scripts/content.js'] });
+        } catch {
+          // Pages extensions aren't allowed to touch, such as the Chrome Web Store.
+        }
+      }),
+    );
+  });
 });

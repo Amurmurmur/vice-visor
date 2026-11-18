@@ -86,7 +86,7 @@ await page.screenshot({ path: path.join(out, 'r1-search-gta6.png') });
 
 // click twice to peek
 await page
-  .locator(`${SEARCH_CARD}[data-vv="on"]`)
+  .locator('[data-testid="search-sdui-post"][data-vv="on"], [data-testid^="search-post"][data-vv="on"]')
   .first()
   .evaluate((el) => el.setAttribute('data-e2e-target', ''));
 const target = page.locator('[data-e2e-target]');

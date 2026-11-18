@@ -16,7 +16,7 @@ pnpm build
 3. Click **Load unpacked** and pick the `.output/chrome-mv3` folder
 4. Pin the sunglasses icon to the toolbar
 
-After changing code, run `pnpm build` again and click the reload arrow on the extension's card.
+After changing code, run `pnpm build` again and click the reload arrow on the extension's card. Tabs that are already open switch over to the new version on their own, no refresh needed.
 
 ## What it hides
 
@@ -37,7 +37,7 @@ To peek at something, click it once ("Last chance, dude") and again within 4 sec
 - **Standard** (default): anything naming GTA 6 in any spelling (`GTA 6`, `GTA VI`, `#GTA6Trailer`, `gta6`, `Grand Theft Auto VI`, fancy-font or fullwidth text, Russian, Arabic, Japanese and Chinese spellings), plus names that only exist in GTA 6: Leonida, Port Gellhorn, Jason Duval, Lucia Caminos and the rest of the cast.
 - **Paranoid**: also any GTA, Grand Theft Auto, Vice City or Rockstar Games mention, older games included.
 
-You can add your own words in the popup (one per line). The toolbar badge counts what's hidden on the current tab.
+You can add your own words in the popup (one per line). The toolbar badge and the popup both count what's hidden on the current tab, live.
 
 ### Limits
 
@@ -53,7 +53,8 @@ pnpm test         # matcher unit tests (Vitest)
 pnpm build
 pnpm test:e2e     # live YouTube, with the built extension loaded in Chromium
 pnpm test:reddit  # live Reddit
-pnpm test:sites   # X, Facebook and generic-site checks
+pnpm test:sites   # X, Facebook and generic-site checks, plus the popup's live count
+pnpm test:update  # reloading the extension hands open tabs to the new version
 pnpm zip          # package for the Chrome Web Store
 ```
 
