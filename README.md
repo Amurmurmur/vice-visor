@@ -41,8 +41,8 @@ You can add your own words in the popup (one per line). The toolbar badge counts
 
 ### Limits
 
-- It reads text, not pixels. On Reddit that includes a subreddit's banner art.
-- Text inside shadow DOM (for example Reddit's subreddit sidebar blurb) isn't scanned. A thumbnail with "GTA 6" in the image and a title that never mentions it will get through.
+- It reads text, not pixels. A thumbnail with "GTA 6" in the image and a title that never mentions it will get through, and so will a subreddit's banner art.
+- Text inside shadow DOM (for example Reddit's subreddit sidebar blurb) isn't scanned.
 - X and Facebook are tested against pages that mirror their markup, not the logged-in sites. old.reddit.com now requires a login, so its selectors aren't tested live either. If either redesigns, the card selectors in `src/lib/adapters.ts` may need updating. Anything they miss still gets caught by the generic text fallback, just covering a smaller block.
 
 ## Development
