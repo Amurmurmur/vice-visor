@@ -1,0 +1,9 @@
+node_modules
+.output
+.wxt
+web-ext.config.ts
+test-results
+scripts/out
+*.log
+.DS_Store
+.impeccable

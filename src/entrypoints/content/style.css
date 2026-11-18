@@ -1,0 +1,139 @@
+/*
+ * Vice Visor overlay.
+ * Everything keys off data-vv attributes and pseudo-elements, so the page's own DOM is never
+ * restructured and frameworks (YouTube's Polymer, X and Facebook's React) don't notice us.
+ *
+ * A hidden element keeps its size but paints nothing (visibility: hidden), and a solid
+ * sunset panel is drawn on top. Nothing underneath can show through.
+ */
+
+[data-vv='on'],
+[data-vv='confirm'] {
+  visibility: hidden !important;
+  user-select: none !important;
+}
+
+[data-vv='on']:not([data-vv-contents]),
+[data-vv='confirm']:not([data-vv-contents]) {
+  isolation: isolate !important;
+}
+
+[data-vv-rel][data-vv='on'],
+[data-vv-rel][data-vv='confirm'] {
+  position: relative !important;
+}
+
+/* The panel: solid, and it carries the message. */
+[data-vv='on']:not([data-vv-contents])::before,
+[data-vv='confirm']:not([data-vv-contents])::before {
+  content: attr(data-vv-msg) !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2147483646 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 4px 12px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background:
+    radial-gradient(120% 80% at 50% 125%, rgba(255, 214, 102, 0.6), transparent 62%),
+    linear-gradient(160deg, #6d28d9 0%, #ff2e88 55%, #ff8a3d 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+  font-family: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 15px !important;
+  font-style: normal !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.01em !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  text-shadow: 0 1px 2px rgba(40, 0, 40, 0.35) !important;
+  text-transform: none !important;
+  white-space: pre-line !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  filter: none !important;
+  clip-path: none !important;
+  float: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+[data-vv='on']:not([data-vv-contents]):hover::before {
+  filter: brightness(1.08) !important;
+}
+
+/* Sizes, set from a ResizeObserver so tiny chips and huge players both read well. */
+:is([data-vv='on'], [data-vv='confirm'])[data-vv-size='xs']:not([data-vv-contents])::before {
+  content: 'be patient' !important;
+  padding: 0 6px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+:is([data-vv='on'], [data-vv='confirm'])[data-vv-size='sm']:not([data-vv-contents])::before {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+}
+:is([data-vv='on'], [data-vv='confirm'])[data-vv-size='md']:not([data-vv-contents])::before {
+  padding-bottom: 22px !important;
+  font-size: 18px !important;
+}
+:is([data-vv='on'], [data-vv='confirm'])[data-vv-size='lg']:not([data-vv-contents])::before {
+  padding-bottom: 28px !important;
+  font-size: 26px !important;
+}
+
+/* Hint line on bigger cards. */
+[data-vv='on'][data-vv-size='md']:not([data-vv-contents])::after,
+[data-vv='on'][data-vv-size='lg']:not([data-vv-contents])::after {
+  content: 'GTA 6 spoiler shielded \00B7  click twice to peek' !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 10px !important;
+  top: auto !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  background: none !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.02em !important;
+  text-align: center !important;
+  text-shadow: 0 1px 2px rgba(40, 0, 40, 0.35) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+/* First click: one more to actually look. */
+[data-vv='confirm']:not([data-vv-contents])::before {
+  content: 'Last chance, dude.\A Click again to spoil it.' !important;
+  background: linear-gradient(160deg, #b91c1c, #ea580c) !important;
+}
+[data-vv='confirm'][data-vv-size='xs']:not([data-vv-contents])::before {
+  content: 'click again' !important;
+}

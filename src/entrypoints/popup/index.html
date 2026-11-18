@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vice Visor</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <header class="brand">
+        <img class="brand-icon" src="../../assets/icon.svg" alt="" width="40" height="40" />
+        <div class="brand-text">
+          <h1>Vice Visor</h1>
+          <p>GTA 6 spoiler shield</p>
+        </div>
+        <label class="switch switch-lg" title="Turn the shield on or off">
+          <input id="enabled" type="checkbox" role="switch" aria-label="Shield on" />
+          <span class="track"><span class="thumb"></span></span>
+        </label>
+      </header>
+
+      <section class="hero" id="hero">
+        <div class="hero-count" id="count">0</div>
+        <div class="hero-copy">
+          <p class="hero-label" id="count-label">spoilers hidden on this tab</p>
+          <p class="hero-countdown" id="countdown"></p>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Shield these sites</h2>
+        <label class="row">
+          <span>YouTube</span>
+          <span class="switch"><input type="checkbox" role="switch" data-site="youtube" /><span class="track"><span class="thumb"></span></span></span>
+        </label>
+        <label class="row">
+          <span>X</span>
+          <span class="switch"><input type="checkbox" role="switch" data-site="x" /><span class="track"><span class="thumb"></span></span></span>
+        </label>
+        <label class="row">
+          <span>Facebook</span>
+          <span class="switch"><input type="checkbox" role="switch" data-site="facebook" /><span class="track"><span class="thumb"></span></span></span>
+        </label>
+        <label class="row">
+          <span>Everywhere else</span>
+          <span class="switch"><input type="checkbox" role="switch" data-site="other" /><span class="track"><span class="thumb"></span></span></span>
+        </label>
+      </section>
+
+      <section class="group">
+        <h2>How strict</h2>
+        <div class="segmented" role="radiogroup" aria-label="Strictness">
+          <label><input type="radio" name="strictness" value="standard" /><span>Standard</span></label>
+          <label><input type="radio" name="strictness" value="paranoid" /><span>Paranoid</span></label>
+        </div>
+        <p class="hint" id="strictness-hint"></p>
+      </section>
+
+      <section class="group">
+        <h2><label for="keywords">Extra words to hide</label></h2>
+        <textarea id="keywords" rows="3" spellcheck="false" placeholder="One per line, e.g. heist finale"></textarea>
+        <p class="hint" id="keywords-status">Saved automatically. Applies to open tabs right away.</p>
+      </section>
+
+      <footer class="footer">Click a hidden item twice to peek at it.</footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
