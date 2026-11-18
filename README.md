@@ -2,6 +2,10 @@
 
 A Chrome extension that hides GTA 6 spoilers across the web: YouTube, Reddit, X, Facebook and everywhere else. Anything that mentions GTA 6 gets covered by a solid sunset panel that says **"Be patient, dude."**
 
+![Vice Visor demo: GTA 6 spoilers covered on YouTube, Reddit, X and Facebook](docs/demo.webp)
+
+<sub>YouTube and Reddit are the live sites. X and Facebook are stand-in feeds, since those need a login; the extension doing the hiding is the real one. [Download the demo as a video (MP4, 13 MB)](https://github.com/Amurmurmur/vice-visor/releases/download/v1.0.1/vice-visor-demo.mp4)</sub>
+
 Built with [WXT](https://wxt.dev) (Manifest V3, Vite, TypeScript).
 
 ## Install it in Chrome
