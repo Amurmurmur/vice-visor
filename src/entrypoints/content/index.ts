@@ -15,13 +15,19 @@ export default defineContentScript({
     const adapter = adapterFor(location.hostname);
     const isTop = window.top === window;
 
-    const sendCount = (count: number) => {
-      browser.runtime.sendMessage({ type: 'vv:count', count }).catch(() => {
-        // The service worker may be asleep or the extension reloaded; the next change resends.
-      });
-    };
-
     let engine: CensorEngine | null = null;
+
+    const sendCount = (count: number) => {
+      try {
+        browser.runtime.sendMessage({ type: 'vv:count', count }).catch(() => {
+          // The service worker was asleep; the next change resends.
+        });
+      } catch {
+        // Chrome cut this copy off from the extension (it was updated, disabled or removed)
+        // and no newer copy has replaced it. Nothing left to report to: stand down.
+        engine?.detach();
+      }
+    };
 
     const apply = (settings: Settings) => {
       const active = settings.enabled && settings.sites[adapter.site];
@@ -48,8 +54,14 @@ export default defineContentScript({
     // Fires when a newer copy of this script starts in the page (the background injects one
     // into open tabs after an update). Step aside without unhiding; the new copy takes over.
     ctx.onInvalidated(() => {
-      unwatch();
+      // Stop first: by now Chrome has cut this copy off from the extension, so any call into
+      // the extension's APIs (including unsubscribing from settings) throws.
       engine?.detach();
+      try {
+        unwatch();
+      } catch {
+        // Already cut off; there is nothing left to unsubscribe from.
+      }
     });
   },
 });

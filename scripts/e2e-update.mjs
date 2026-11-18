@@ -61,7 +61,6 @@ await extensionsPage.goto('chrome://extensions');
 // Same as yours: Developer mode on (Chrome disables a reloaded unpacked extension without it).
 await extensionsPage.evaluate(() => chrome.developerPrivate.updateProfileConfiguration({ inDeveloperMode: true }));
 await extensionsPage.evaluate((id) => chrome.developerPrivate.reload(id, { failQuietly: true }), extensionId);
-await extensionsPage.close();
 await page.waitForTimeout(1500);
 api = await context.newPage();
 for (let attempt = 0; ; attempt++) {
@@ -84,9 +83,26 @@ await setEnabled(false);
 await page.waitForTimeout(800);
 check('after the update: switching off un-hides the open tab', (await hidden()) === 0, `hidden=${await hidden()}`);
 
+// If the old copy didn't really stop, it keeps hiding new content even with the shield off.
+await page.evaluate(() => {
+  const cell = document.createElement('div');
+  cell.dataset.testid = 'cellInnerDiv';
+  cell.innerHTML = '<article data-testid="tweet"><div data-testid="tweetText">#GTA6 twist</div></article>';
+  document.querySelector('[data-testid=primaryColumn]').append(cell);
+});
+await page.waitForTimeout(500);
+check('after the update: no leftover old copy still hiding things', (await hidden()) === 0, `hidden=${await hidden()}`);
+
 await setEnabled(true);
 await page.waitForTimeout(800);
-check('after the update: switching back on hides again', (await hidden()) === 2, `hidden=${await hidden()}`);
+check('after the update: switching back on hides again', (await hidden()) === 3, `hidden=${await hidden()}`);
+
+// What chrome://extensions shows under "Errors" for the extension.
+const errors = await extensionsPage.evaluate(
+  (id) => chrome.developerPrivate.getExtensionInfo(id).then((info) => info.runtimeErrors.map((e) => e.message)),
+  extensionId,
+);
+check('no errors on the extension page', errors.length === 0, errors.join(' | '));
 
 await context.close();
 const failed = results.filter((r) => !r.pass);
