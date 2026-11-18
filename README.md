@@ -6,17 +6,22 @@ Built with [WXT](https://wxt.dev) (Manifest V3, Vite, TypeScript).
 
 ## Install it in Chrome
 
+1. Download `vice-visor-<version>-chrome.zip` from the [latest release](https://github.com/Amurmurmur/vice-visor/releases/latest) and unzip it
+2. Open `chrome://extensions`
+3. Turn on **Developer mode** (top right)
+4. Click **Load unpacked** and pick the unzipped folder
+5. Pin the sunglasses icon to the toolbar
+
+Works in Chrome, Edge, Brave, Arc and other Chromium browsers. It collects nothing: no analytics, no network requests, and your settings stay in your browser's own sync storage.
+
+### Build it yourself
+
 ```bash
 pnpm install
 pnpm build
 ```
 
-1. Open `chrome://extensions`
-2. Turn on **Developer mode** (top right)
-3. Click **Load unpacked** and pick the `.output/chrome-mv3` folder
-4. Pin the sunglasses icon to the toolbar
-
-After changing code, run `pnpm build` again and click the reload arrow on the extension's card. Tabs that are already open switch over to the new version on their own, no refresh needed.
+Then **Load unpacked** the `.output/chrome-mv3` folder. After changing code, run `pnpm build` again and click the reload arrow on the extension's card. Tabs that are already open switch over to the new version on their own, no refresh needed.
 
 ## What it hides
 
@@ -74,3 +79,9 @@ src/
 ```
 
 The engine never restructures the page. It sets `data-vv` attributes, and the stylesheet draws the panel with a `::before` pseudo-element over a `visibility: hidden` element. That way YouTube's and React's renderers don't fight it, and recycled cards (YouTube and X reuse DOM nodes as you scroll and navigate) are re-checked whenever their text changes.
+
+## License
+
+[MIT](LICENSE). Free to use, change and share.
+
+Vice Visor is a fan-made tool. It is not affiliated with or endorsed by Rockstar Games or Take-Two Interactive. Grand Theft Auto and GTA are trademarks of their respective owners.

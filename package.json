@@ -2,6 +2,7 @@
   "name": "vice-visor",
   "description": "Hides GTA 6 spoilers across YouTube, Reddit, X, Facebook and the rest of the web. Be patient, dude.",
   "private": true,
+  "license": "MIT",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
