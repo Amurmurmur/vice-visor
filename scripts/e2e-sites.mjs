@@ -76,7 +76,7 @@ const context = await chromium.launchPersistentContext(mkdtempSync(path.join(tmp
   viewport: { width: 900, height: 900 },
   args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
 });
-await (context.serviceWorkers()[0] ?? context.waitForEvent('serviceworker'));
+const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
 for (const [url, body] of Object.entries(pages)) {
   await context.route(url, (route) => route.fulfill({ contentType: 'text/html; charset=utf-8', body }));
 }
@@ -97,6 +97,45 @@ check('X: trend hidden', await hidden('#trend'));
 check('X: your own draft is never hidden', !(await state('#composer')));
 check('X: tab title untouched when it is clean', (await page.title()) === 'Home / X');
 await page.screenshot({ path: path.join(out, '5-x.png') });
+
+// ---------------------------------------------------------------- live count for the popup
+const hiddenOnPage = () =>
+  page.evaluate(() => document.querySelectorAll('[data-vv="on"]:not([data-vv-linked])').length);
+const savedCount = () =>
+  worker.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true });
+    const key = `tab-counts:${tab.id}`;
+    const counts = (await chrome.storage.session.get(key))[key];
+    return Object.values(counts?.frames ?? {}).reduce((a, b) => a + b, 0);
+  });
+const addSpoilerTweet = (text) =>
+  page.evaluate((text) => {
+    const cell = document.createElement('div');
+    cell.dataset.testid = 'cellInnerDiv';
+    cell.innerHTML = `<article data-testid="tweet"><div data-testid="tweetText">${text}</div></article>`;
+    document.querySelector('[data-testid=primaryColumn]').append(cell);
+  }, text);
+
+const saved = await savedCount();
+check('saved count matches what the page hides', saved > 0 && saved === (await hiddenOnPage()), `saved=${saved}`);
+
+// The real popup page, opened in a background tab so it follows the X tab like the toolbar popup does.
+const popupOpened = context.waitForEvent('page');
+await worker.evaluate((url) => chrome.tabs.create({ url, active: false }), `chrome-extension://${new URL(worker.url()).host}/popup.html`);
+const popup = await popupOpened;
+await popup.waitForLoadState();
+await popup.waitForTimeout(600);
+const shownBefore = Number(await popup.locator('#count').textContent());
+await addSpoilerTweet('GTA 6 final mission leak');
+await popup.waitForTimeout(900);
+const shownAfter = Number(await popup.locator('#count').textContent());
+check('open popup updates live as spoilers load', shownBefore === saved && shownAfter === saved + 1, `${shownBefore} -> ${shownAfter}`);
+await addSpoilerTweet('Another #GTAVI spoiler');
+await popup.waitForTimeout(900);
+const shownLater = Number(await popup.locator('#count').textContent());
+check('and keeps updating', shownLater === saved + 2, `${shownAfter} -> ${shownLater}`);
+await popup.screenshot({ path: path.join(out, '8b-popup-live.png') });
+await popup.close();
 
 // ---------------------------------------------------------------- Facebook
 await page.goto('https://www.facebook.com/');

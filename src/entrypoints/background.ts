@@ -1,40 +1,51 @@
 import { browser } from 'wxt/browser';
+import { storage } from 'wxt/utils/storage';
+import { tabCountsKey, totalOf, type TabCounts } from '@/lib/counts';
 
 interface CountMessage {
   type: 'vv:count';
   count: number;
 }
 
-/** Shows how many spoilers are hidden on each tab, summed across its frames. */
+/**
+ * Keeps each tab's hidden-spoiler count: shown on the toolbar badge, and saved to session
+ * storage so the popup can follow it live.
+ */
 export default defineBackground(() => {
-  const frames = new Map<number, Map<number, number>>();
-  const topDocument = new Map<number, string | undefined>();
+  // Frames report independently; run updates one at a time so none overwrite each other.
+  let queue = Promise.resolve();
+
+  async function record(tabId: number, frameId: number, documentId: string | undefined, count: number) {
+    const key = tabCountsKey(tabId);
+    const counts: TabCounts = (await storage.getItem<TabCounts>(key)) ?? { frames: {} };
+    if (frameId === 0 && counts.documentId !== documentId) {
+      counts.documentId = documentId;
+      counts.frames = {};
+    }
+    counts.frames[frameId] = count;
+    await storage.setItem(key, counts);
+
+    const total = totalOf(counts);
+    const text = total === 0 ? '' : total > 999 ? '999+' : String(total);
+    await Promise.all([
+      browser.action.setBadgeText({ tabId, text }),
+      browser.action.setBadgeBackgroundColor({ tabId, color: '#ff2e88' }),
+      browser.action.setBadgeTextColor({ tabId, color: '#ffffff' }),
+    ]).catch(() => {
+      // The tab closed in the meantime.
+    });
+  }
 
   browser.runtime.onMessage.addListener((message: CountMessage, sender) => {
     if (message?.type !== 'vv:count') return;
     const tabId = sender.tab?.id;
     if (tabId === undefined) return;
-    const frameId = sender.frameId ?? 0;
-
-    let perFrame = frames.get(tabId);
-    if (!perFrame) frames.set(tabId, (perFrame = new Map()));
-    // A new top-level document means the old frames are gone.
-    if (frameId === 0 && topDocument.get(tabId) !== sender.documentId) {
-      topDocument.set(tabId, sender.documentId);
-      perFrame.clear();
-    }
-    perFrame.set(frameId, message.count);
-
-    let total = 0;
-    for (const count of perFrame.values()) total += count;
-    const text = total === 0 ? '' : total > 999 ? '999+' : String(total);
-    browser.action.setBadgeText({ tabId, text }).catch(() => {});
-    browser.action.setBadgeBackgroundColor({ tabId, color: '#ff2e88' }).catch(() => {});
-    browser.action.setBadgeTextColor({ tabId, color: '#ffffff' }).catch(() => {});
+    queue = queue
+      .then(() => record(tabId, sender.frameId ?? 0, sender.documentId, message.count))
+      .catch((error) => console.error('[Vice Visor] count update failed', error));
   });
 
   browser.tabs.onRemoved.addListener((tabId) => {
-    frames.delete(tabId);
-    topDocument.delete(tabId);
+    queue = queue.then(() => storage.removeItem(tabCountsKey(tabId)));
   });
 });

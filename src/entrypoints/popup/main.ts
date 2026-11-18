@@ -1,4 +1,5 @@
 import { browser } from 'wxt/browser';
+import { getTabCounts, totalOf, watchTabCounts } from '@/lib/counts';
 import { LAUNCH_DATE, settingsItem, withDefaults, type Settings, type SiteId, type Strictness } from '@/lib/settings';
 
 const STRICTNESS_HINTS: Record<Strictness, string> = {
@@ -37,6 +38,7 @@ function render(): void {
     keywordsInput.value = settings.customKeywords.join('\n');
   }
   keywordsInput.disabled = !settings.enabled;
+  renderCount();
 }
 
 async function save(patch: Partial<Settings>): Promise<void> {
@@ -47,7 +49,6 @@ async function save(patch: Partial<Settings>): Promise<void> {
 
 enabledInput.addEventListener('change', () => {
   save({ enabled: enabledInput.checked });
-  refreshCount();
 });
 
 for (const input of siteInputs) {
@@ -78,28 +79,41 @@ keywordsInput.addEventListener('input', () => {
   }, 400);
 });
 
-async function refreshCount(): Promise<void> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  const restricted = !tab?.url || !/^(https?|file):/.test(tab.url);
-  if (tab?.id === undefined) return;
+/** The tab the popup was opened over, and how many spoilers it is hiding right now. */
+let activeTab: { id: number; restricted: boolean } | null = null;
+let hiddenCount = 0;
 
-  // Give the page a beat to unhide or rehide after a toggle.
-  await new Promise((resolve) => setTimeout(resolve, 350));
-  const badge = await browser.action.getBadgeText({ tabId: tab.id }).catch(() => '');
-  const count = Number.parseInt(badge, 10) || 0;
-
-  hero.classList.toggle('is-quiet', count === 0);
+function renderCount(): void {
+  hero.classList.toggle('is-quiet', hiddenCount === 0 || !settings.enabled);
   if (!settings.enabled) {
     countEl.textContent = 'Off';
     countLabel.textContent = 'Shield is down. Spoilers can reach you.';
-  } else if (restricted && tab.url !== undefined) {
+  } else if (activeTab?.restricted) {
     countEl.textContent = '0';
     countLabel.textContent = 'Nothing to shield on this page';
   } else {
-    countEl.textContent = badge.endsWith('+') ? badge : String(count);
+    countEl.textContent = hiddenCount > 999 ? '999+' : String(hiddenCount);
     countLabel.textContent =
-      count === 0 ? 'Nothing spoilery on this tab' : count === 1 ? 'spoiler hidden on this tab' : 'spoilers hidden on this tab';
+      hiddenCount === 0
+        ? 'Nothing spoilery on this tab'
+        : hiddenCount === 1
+          ? 'spoiler hidden on this tab'
+          : 'spoilers hidden on this tab';
   }
+}
+
+/** Reads the active tab's count, then follows it as the page hides or reveals things. */
+async function followActiveTab(): Promise<void> {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id === undefined) return;
+  // Without host access to a page (chrome://, the Web Store) its url is hidden or non-web.
+  activeTab = { id: tab.id, restricted: tab.url !== undefined && !/^(https?|file):/.test(tab.url) };
+  hiddenCount = totalOf(await getTabCounts(tab.id));
+  renderCount();
+  watchTabCounts(tab.id, (counts) => {
+    hiddenCount = totalOf(counts);
+    renderCount();
+  });
 }
 
 function renderCountdown(): void {
@@ -121,7 +135,7 @@ async function init(): Promise<void> {
   render();
   renderCountdown();
   window.setInterval(renderCountdown, 30_000);
-  refreshCount();
+  await followActiveTab();
   settingsItem.watch((value) => {
     settings = withDefaults(value);
     render();
