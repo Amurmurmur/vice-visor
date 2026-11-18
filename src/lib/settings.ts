@@ -1,7 +1,7 @@
 import { storage } from 'wxt/utils/storage';
 
 export type Strictness = 'standard' | 'paranoid';
-export type SiteId = 'youtube' | 'x' | 'facebook' | 'other';
+export type SiteId = 'youtube' | 'x' | 'facebook' | 'reddit' | 'other';
 
 export interface Settings {
   enabled: boolean;
@@ -14,7 +14,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   strictness: 'standard',
-  sites: { youtube: true, x: true, facebook: true, other: true },
+  sites: { youtube: true, x: true, facebook: true, reddit: true, other: true },
   customKeywords: [],
 };
 

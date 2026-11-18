@@ -1,6 +1,6 @@
 {
   "name": "vice-visor",
-  "description": "Hides GTA 6 spoilers across YouTube, X, Facebook and the rest of the web. Be patient, dude.",
+  "description": "Hides GTA 6 spoilers across YouTube, Reddit, X, Facebook and the rest of the web. Be patient, dude.",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:e2e": "node scripts/e2e-youtube.mjs",
     "test:sites": "node scripts/e2e-sites.mjs",
+    "test:reddit": "node scripts/e2e-reddit.mjs",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {

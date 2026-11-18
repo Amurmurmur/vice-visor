@@ -38,7 +38,7 @@ const BLOCKS = [
 ].join(',');
 
 const SKIP = 'script,style,noscript,template,textarea,select,title,head,svg defs';
-const TEXT_ATTRS = ['aria-label', 'title', 'alt'];
+const TEXT_ATTRS = ['aria-label', 'title', 'alt', 'post-title', 'subreddit-prefixed-name'];
 const CONFIRM_MS = 4000;
 
 export interface EngineOptions {
@@ -65,6 +65,7 @@ export class CensorEngine {
   private countTimer: number | undefined;
   private lastCount = -1;
   private originalTitle: string | null = null;
+  private relinkPending = false;
   private running = false;
 
   constructor(opts: EngineOptions) {
@@ -151,6 +152,10 @@ export class CensorEngine {
         if (el.matches(containers)) this.pending.add(el);
         for (const card of el.querySelectorAll(containers)) this.pending.add(card);
       }
+      const { linkTargets } = this.opts.adapter;
+      if (linkTargets && this.links.size && (el.matches(linkTargets) || el.querySelector(linkTargets))) {
+        this.relinkPending = true;
+      }
       if (this.opts.fallback && el.firstChild) {
         const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
         for (let text = walker.nextNode(); text; text = walker.nextNode()) this.scanText(text as Text);
@@ -182,6 +187,13 @@ export class CensorEngine {
   }
 
   private flush(): void {
+    if (this.relinkPending) {
+      this.relinkPending = false;
+      for (const owner of [...this.links.keys()]) {
+        const state = owner.getAttribute(ATTR);
+        if (owner.isConnected && (state === 'on' || state === 'confirm')) this.relink(owner);
+      }
+    }
     if (!this.pending.size) return;
     const batch = [...this.pending];
     this.pending.clear();
@@ -237,6 +249,7 @@ export class CensorEngine {
     const extra = this.opts.adapter.linked?.(el) ?? [];
     for (const linked of extra) this.paint(linked, message);
     const all = [...paintTargets.filter((t) => t !== el), ...extra];
+    for (const linked of extra) this.clearInside(linked);
     for (const linked of all) {
       linked.setAttribute(ATTR, 'on');
       linked.setAttribute('data-vv-linked', '');
@@ -255,6 +268,7 @@ export class CensorEngine {
     }
     el.setAttribute('data-vv-msg', message);
     if (style.position === 'static') el.setAttribute('data-vv-rel', '');
+    if (style.display === 'inline' && el.firstElementChild && !hasOwnText(el)) el.setAttribute('data-vv-block', '');
     for (const video of el.querySelectorAll('video')) video.pause();
     if (el instanceof HTMLVideoElement) el.pause();
     this.resizer.observe(el);
@@ -267,6 +281,7 @@ export class CensorEngine {
     const message = owner.getAttribute('data-vv-msg') ?? pickMessage('');
     for (const el of wanted) {
       if (current.includes(el) && el.getAttribute(ATTR) === owner.getAttribute(ATTR)) continue;
+      this.clearInside(el);
       this.paint(el, message);
       el.setAttribute(ATTR, owner.getAttribute(ATTR) ?? 'on');
       el.setAttribute('data-vv-linked', '');
@@ -274,6 +289,12 @@ export class CensorEngine {
       if (!current.includes(el)) current.push(el);
     }
     this.links.set(owner, current);
+  }
+
+  private clearInside(el: Element): void {
+    for (const inner of el.querySelectorAll(`[${ATTR}]`)) {
+      if (!this.linkOwner.has(inner)) this.unhide(inner);
+    }
   }
 
   private unhide(el: Element): void {
@@ -286,7 +307,7 @@ export class CensorEngine {
   }
 
   private clearMarks(el: Element): void {
-    for (const name of [ATTR, 'data-vv-msg', 'data-vv-rel', 'data-vv-size', 'data-vv-linked', 'data-vv-contents']) {
+    for (const name of [ATTR, 'data-vv-msg', 'data-vv-rel', 'data-vv-size', 'data-vv-linked', 'data-vv-contents', 'data-vv-block']) {
       el.removeAttribute(name);
     }
     this.resizer.unobserve(el);
@@ -402,7 +423,7 @@ function collectText(el: Element): string {
     const value = (node as Text).data;
     if (value.trim()) parts.push(value);
   }
-  for (const node of [el, ...el.querySelectorAll('[aria-label],[title],img[alt]')]) {
+  for (const node of [el, ...el.querySelectorAll('[aria-label],[title],img[alt],[post-title],[subreddit-prefixed-name]')]) {
     for (const name of TEXT_ATTRS) {
       const value = node.getAttribute(name);
       if (value) parts.push(value);
@@ -441,9 +462,17 @@ function isInTitle(node: Node): boolean {
   return el?.localName === 'title' && el.parentElement?.localName === 'head';
 }
 
+function hasOwnText(el: Element): boolean {
+  for (const node of el.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) return true;
+  }
+  return false;
+}
+
 function sizeTag(el: Element, rect: DOMRectReadOnly): void {
-  const { width, height } = rect;
-  let size = 'lg';
+  // Inline boxes report an empty content rect; measure the border box instead.
+  const { width, height } = rect.width && rect.height ? rect : el.getBoundingClientRect();
+  let size = height > 900 ? 'xl' : 'lg';
   if (height < 36 || width < 90) size = 'xs';
   else if (height < 100 || width < 180) size = 'sm';
   else if (height < 230) size = 'md';

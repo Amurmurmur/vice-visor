@@ -9,6 +9,8 @@ export interface Adapter {
   containers?: string;
   /** Elements that are hidden and revealed together with a matching container. */
   linked?(container: Element): Element[];
+  /** Selector for what `linked` returns, so pieces that load later (comments) get attached too. */
+  linkTargets?: string;
 }
 
 const YOUTUBE_CONTAINERS = [
@@ -65,11 +67,12 @@ const YOUTUBE_CONTAINERS = [
 export const youtube: Adapter = {
   site: 'youtube',
   containers: YOUTUBE_CONTAINERS,
+  // A GTA 6 video's page: the player and the comment section go with the title.
   linked(container) {
     if (container.localName !== 'ytd-watch-metadata') return [];
-    const player = document.querySelector('ytd-watch-flexy #movie_player, ytd-player #movie_player');
-    return player ? [player] : [];
+    return [...document.querySelectorAll('ytd-watch-flexy #movie_player, ytd-watch-flexy ytd-comments#comments')];
   },
+  linkTargets: '#movie_player, ytd-comments#comments',
 };
 
 export const x: Adapter = {
@@ -97,6 +100,36 @@ export const facebook: Adapter = {
   ].join(','),
 };
 
+export const reddit: Adapter = {
+  site: 'reddit',
+  containers: [
+    // Feeds, subreddits and the post page itself
+    'shreddit-post',
+    'community-highlight-card',
+    // Search results (Reddit has several card layouts: search-post-unit,
+    // search-post-with-content-preview, ...)
+    '[data-testid="search-sdui-post"]',
+    '[data-testid^="search-post"]',
+    '[data-testid="sdui-post-unit"]',
+    '[data-testid^="search-community"]',
+    // The AI answer box at the top of search results
+    'div:has(> [data-testid="sources-header"])',
+    // One comment's body, so a spoiler reply hides that reply and not the whole thread
+    'shreddit-comment [slot="comment"]',
+    // old.reddit.com
+    '.thing.link',
+    '.thing.comment > .entry',
+  ].join(','),
+  // A spoiler post's own page: its comment section goes with it. Comments there spoil
+  // without ever saying "GTA 6".
+  linked(container) {
+    if (container.localName !== 'shreddit-post' || !location.pathname.includes('/comments/')) return [];
+    if (container.parentElement?.localName !== 'main') return [];
+    return [...document.querySelectorAll('shreddit-comment-tree')];
+  },
+  linkTargets: 'shreddit-comment-tree',
+};
+
 /** Any other site: no known cards, only the text-based fallback. */
 export const generic: Adapter = { site: 'other' };
 
@@ -109,5 +142,6 @@ export function adapterFor(hostname: string): Adapter {
     return x;
   }
   if (host === 'facebook.com' || host.endsWith('.facebook.com')) return facebook;
+  if (host === 'reddit.com' || host.endsWith('.reddit.com')) return reddit;
   return generic;
 }

@@ -23,6 +23,11 @@
   position: relative !important;
 }
 
+[data-vv-block][data-vv='on'],
+[data-vv-block][data-vv='confirm'] {
+  display: block !important;
+}
+
 /* The panel: solid, and it carries the message. */
 [data-vv='on']:not([data-vv-contents])::before,
 [data-vv='confirm']:not([data-vv-contents])::before {
@@ -96,9 +101,17 @@
   font-size: 26px !important;
 }
 
+/* Very tall areas (a whole comment section): keep the message near the top, where you'll see it. */
+:is([data-vv='on'], [data-vv='confirm'])[data-vv-size='xl']:not([data-vv-contents])::before {
+  align-items: flex-start !important;
+  padding-top: 96px !important;
+  font-size: 26px !important;
+}
+
 /* Hint line on bigger cards. */
 [data-vv='on'][data-vv-size='md']:not([data-vv-contents])::after,
-[data-vv='on'][data-vv-size='lg']:not([data-vv-contents])::after {
+[data-vv='on'][data-vv-size='lg']:not([data-vv-contents])::after,
+[data-vv='on'][data-vv-size='xl']:not([data-vv-contents])::after {
   content: 'GTA 6 spoiler shielded \00B7  click twice to peek' !important;
   position: absolute !important;
   left: 0 !important;
@@ -127,6 +140,11 @@
   visibility: visible !important;
   transform: none !important;
   pointer-events: none !important;
+}
+
+[data-vv='on'][data-vv-size='xl']:not([data-vv-contents])::after {
+  top: 150px !important;
+  bottom: auto !important;
 }
 
 /* First click: one more to actually look. */

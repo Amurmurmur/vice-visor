@@ -1,6 +1,6 @@
 # Vice Visor
 
-A Chrome extension that hides GTA 6 spoilers across the web. Anything that mentions GTA 6 gets covered by a solid sunset panel that says **"Be patient, dude."**
+A Chrome extension that hides GTA 6 spoilers across the web: YouTube, Reddit, X, Facebook and everywhere else. Anything that mentions GTA 6 gets covered by a solid sunset panel that says **"Be patient, dude."**
 
 Built with [WXT](https://wxt.dev) (Manifest V3, Vite, TypeScript).
 
@@ -22,7 +22,8 @@ After changing code, run `pnpm build` again and click the reload arrow on the ex
 
 | Where | What |
 | --- | --- |
-| YouTube | Home, search, channel and sidebar videos, Shorts, playlists, topic chips, comments, community posts, notifications, ads, live chat, end screens. On a GTA 6 video's page it covers the player, title and description, and keeps the video paused. |
+| YouTube | Home, search, channel and sidebar videos, Shorts, playlists, topic chips, comments, community posts, notifications, ads, live chat, end screens. On a GTA 6 video's page it covers the player, title, description and the whole comment section, and keeps the video paused. |
+| Reddit | Feed and subreddit posts, search results, the AI answer box on search, community cards, individual comments. Anything posted in r/GTA6 (or any subreddit named after it) is hidden even if the title never says "GTA 6". On a spoiler post's page the whole comment section is covered with it. old.reddit.com posts and comments too. |
 | X | Tweets, replies, quote cards, trends, people, DMs, notifications |
 | Facebook | Feed posts (the whole post, if a comment spoils), comments, reels |
 | Everywhere else | Any headline, paragraph, list item or table row that mentions GTA 6 |
@@ -40,8 +41,9 @@ You can add your own words in the popup (one per line). The toolbar badge counts
 
 ### Limits
 
-- It reads text, not pixels. A thumbnail with "GTA 6" in the image and a title that never mentions it will get through.
-- X and Facebook are tested against pages that mirror their markup, not the logged-in sites. If either redesigns, the card selectors in `src/lib/adapters.ts` may need updating. Anything they miss still gets caught by the generic text fallback, just covering a smaller block.
+- It reads text, not pixels. On Reddit that includes a subreddit's banner art.
+- Text inside shadow DOM (for example Reddit's subreddit sidebar blurb) isn't scanned. A thumbnail with "GTA 6" in the image and a title that never mentions it will get through.
+- X and Facebook are tested against pages that mirror their markup, not the logged-in sites. old.reddit.com now requires a login, so its selectors aren't tested live either. If either redesigns, the card selectors in `src/lib/adapters.ts` may need updating. Anything they miss still gets caught by the generic text fallback, just covering a smaller block.
 
 ## Development
 
@@ -50,6 +52,7 @@ pnpm dev          # WXT dev mode with hot reload
 pnpm test         # matcher unit tests (Vitest)
 pnpm build
 pnpm test:e2e     # live YouTube, with the built extension loaded in Chromium
+pnpm test:reddit  # live Reddit
 pnpm test:sites   # X, Facebook and generic-site checks
 pnpm zip          # package for the Chrome Web Store
 ```
@@ -61,7 +64,7 @@ Set `HEADED=1` on the e2e scripts to watch them run. Screenshots land in `script
 ```
 src/
   lib/matcher.ts       what counts as a spoiler
-  lib/adapters.ts      per-site card selectors (YouTube, X, Facebook, generic)
+  lib/adapters.ts      per-site card selectors (YouTube, Reddit, X, Facebook, generic)
   lib/engine.ts        MutationObserver engine: find, hide, reveal, re-check recycled cards
   lib/settings.ts      synced settings and the launch date
   entrypoints/content  content script + overlay CSS (runs at document_start, all frames)

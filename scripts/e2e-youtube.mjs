@@ -145,6 +145,7 @@ const watch = await page.evaluate(() => {
   return {
     metadata: document.querySelector('ytd-watch-metadata')?.getAttribute('data-vv'),
     player: document.querySelector('#movie_player')?.getAttribute('data-vv'),
+    comments: document.querySelector('ytd-comments#comments')?.getAttribute('data-vv'),
     paused: video ? video.paused : null,
     currentTime: video ? video.currentTime : null,
     title: document.title,
@@ -153,6 +154,7 @@ const watch = await page.evaluate(() => {
 console.log('watch page:', watch);
 check('watch page: title + description hidden', watch.metadata === 'on');
 check('watch page: player covered', watch.player === 'on');
+check('watch page: comment section covered', watch.comments === 'on', `comments=${watch.comments}`);
 check('watch page: video kept paused', watch.paused === true || watch.paused === null, `paused=${watch.paused} t=${watch.currentTime?.toFixed?.(2)}`);
 check('watch page: tab title masked', !/gta|grand theft/i.test(watch.title), watch.title);
 await page.screenshot({ path: path.join(out, '4-watch-trailer.png') });
