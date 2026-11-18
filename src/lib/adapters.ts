@@ -112,7 +112,8 @@ export const reddit: Adapter = {
     '[data-testid^="search-post"]',
     '[data-testid="sdui-post-unit"]',
     '[data-testid^="search-community"]',
-    // The AI answer box at the top of search results
+    // The AI answer box at the top of search results (Reddit ships more than one layout)
+    '.search-answers-preview-section',
     'div:has(> [data-testid="sources-header"])',
     // One comment's body, so a spoiler reply hides that reply and not the whole thread
     'shreddit-comment [slot="comment"]',

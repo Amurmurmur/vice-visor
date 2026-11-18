@@ -78,7 +78,7 @@ check('GTA 6 search: results hidden', gta.total > 3 && gta.hidden.length / gta.t
 const leaks = gta.visible.filter((t) => SPOILER.test(t));
 check('GTA 6 search: no visible result names GTA 6', leaks.length === 0, leaks.join(' | '));
 const answer = await page.evaluate(() => {
-  const box = document.querySelector('div:has(> [data-testid="sources-header"])');
+  const box = document.querySelector('.search-answers-preview-section, div:has(> [data-testid="sources-header"])');
   return box ? box.getAttribute('data-vv') ?? 'visible' : 'none on page';
 });
 check('AI answer box hidden (or absent)', answer === 'on' || answer === 'none on page', answer);
